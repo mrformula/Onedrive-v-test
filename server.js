@@ -10,44 +10,72 @@ const path = require('path');
 
 const app = express();
 
-// Health check route should be first
+// Detailed logging
+const logRequest = (req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+};
+
+app.use(logRequest);
+
+// Health check route with detailed logging
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    console.log('Health check requested');
+    res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        services: {
+            web: 'running',
+            qbittorrent: 'running'
+        }
+    });
 });
 
-// Error handling for uncaught exceptions
+// Error handling for uncaught exceptions with more details
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
+    console.error('Stack:', error.stack);
 });
 
 process.on('unhandledRejection', (error) => {
     console.error('Unhandled Rejection:', error);
+    console.error('Stack:', error.stack);
 });
 
-// Connect to MongoDB
-connectDB().catch(console.error);
+// Connect to MongoDB with error handling
+connectDB().catch(error => {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+});
 
-// Initialize services
-const qbt = new QBittorrent();
-const driveManager = new DriveManager();
-const downloadQueue = new Queue(5);
+// Initialize services with error handling
+let qbt, driveManager, downloadQueue;
+try {
+    qbt = new QBittorrent();
+    driveManager = new DriveManager();
+    downloadQueue = new Queue(5);
+    console.log('Services initialized successfully');
+} catch (error) {
+    console.error('Service initialization error:', error);
+    process.exit(1);
+}
 
 // Middleware
 app.use(express.json());
 app.use(express.static('public'));
 
-// Session configuration
+// Session configuration with error handling
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
-        ttl: 14 * 24 * 60 * 60 // 14 days
+        ttl: 14 * 24 * 60 * 60
     }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
+        maxAge: 14 * 24 * 60 * 60 * 1000
     }
 }));
 
@@ -126,19 +154,52 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT}`);
-}).on('error', (error) => {
-    console.error('Server error:', error);
-    process.exit(1); // Force exit on server error
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: err.message });
 });
 
-// Add graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('Received SIGTERM. Performing graceful shutdown...');
-    server.close(() => {
-        console.log('Server closed. Exiting process.');
-        process.exit(0);
-    });
-}); 
+// Start server with retry logic
+const startServer = async (retries = 5) => {
+    const PORT = process.env.PORT || 3000;
+
+    try {
+        const server = app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+
+        server.on('error', (error) => {
+            console.error('Server error:', error);
+            if (retries > 0 && error.code === 'EADDRINUSE') {
+                console.log(`Port ${PORT} in use, retrying... (${retries} attempts left)`);
+                setTimeout(() => startServer(retries - 1), 5000);
+            } else {
+                console.error('Server failed to start');
+                process.exit(1);
+            }
+        });
+
+        // Graceful shutdown
+        process.on('SIGTERM', () => {
+            console.log('Received SIGTERM. Performing graceful shutdown...');
+            server.close(() => {
+                console.log('Server closed. Exiting process.');
+                process.exit(0);
+            });
+        });
+
+    } catch (error) {
+        console.error('Server start error:', error);
+        if (retries > 0) {
+            console.log(`Retrying server start... (${retries} attempts left)`);
+            setTimeout(() => startServer(retries - 1), 5000);
+        } else {
+            console.error('Server failed to start after retries');
+            process.exit(1);
+        }
+    }
+};
+
+// Start the server
+startServer();
