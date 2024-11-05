@@ -121,10 +121,14 @@ class DriveManager {
 
     async getDriveInfo(userId) {
         try {
+            console.log('Getting drive info for user:', userId);
+
             const about = await this.drive.about.get({
                 auth: this.oauth2Client,
                 fields: 'storageQuota,user'
             });
+
+            console.log('Drive API response:', about.data);
 
             const { storageQuota, user } = about.data;
 
@@ -136,14 +140,21 @@ class DriveManager {
                 orderBy: 'modifiedTime desc'
             });
 
+            console.log('Recent files:', recentFiles.data);
+
             return {
-                total: parseInt(storageQuota.limit),
-                used: parseInt(storageQuota.usage),
-                free: parseInt(storageQuota.limit) - parseInt(storageQuota.usage),
+                total: parseInt(storageQuota.limit) || 0,
+                used: parseInt(storageQuota.usage) || 0,
+                free: parseInt(storageQuota.limit - storageQuota.usage) || 0,
                 email: user.emailAddress,
                 recentFiles: recentFiles.data.files
             };
         } catch (error) {
+            console.error('Drive info error details:', {
+                message: error.message,
+                stack: error.stack,
+                response: error.response?.data
+            });
             throw new Error('Failed to get Drive info: ' + error.message);
         }
     }

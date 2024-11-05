@@ -67,10 +67,26 @@ const requireAuth = (req, res, next) => {
 // Protected route example
 app.get('/api/drive/info', requireAuth, async (req, res) => {
     try {
+        console.log('Drive info request from user:', req.session.userId);
+        console.log('Session tokens:', req.session.tokens);
+
+        if (!req.session.tokens) {
+            return res.status(401).json({ error: 'No auth tokens found' });
+        }
+
+        // Set credentials from session
+        driveManager.oauth2Client.setCredentials(req.session.tokens);
+
         const info = await driveManager.getDriveInfo(req.session.userId);
+        console.log('Drive info:', info);
+
         res.json(info);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Drive info error:', error);
+        res.status(500).json({
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 
