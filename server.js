@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const DriveManager = require('./services/drive-manager');
 const app = express();
 
 // Basic error handling
@@ -14,11 +16,18 @@ process.on('unhandledRejection', (error) => {
     console.error('Stack:', error.stack);
 });
 
-// Session middleware
+// Initialize DriveManager
+const driveManager = new DriveManager();
+
+// Session middleware with MongoDB store
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        ttl: 24 * 60 * 60 // 1 day
+    }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
@@ -31,6 +40,7 @@ app.use(express.static('public'));
 
 // Auth check endpoint
 app.get('/api/auth/check', (req, res) => {
+    console.log('Auth check session:', req.session);
     if (req.session.user) {
         res.json({
             authenticated: true,
@@ -45,16 +55,18 @@ app.get('/api/auth/check', (req, res) => {
 
 // Google OAuth routes
 app.get('/auth/google', (req, res) => {
-    // Redirect to Google OAuth
+    console.log('Starting Google OAuth flow');
     const authUrl = driveManager.getAuthUrl();
     res.redirect(authUrl);
 });
 
 app.get('/auth/google/callback', async (req, res) => {
     try {
+        console.log('Google OAuth callback received');
         const code = req.query.code;
         const user = await driveManager.handleAuthCallback(code, req.session);
         req.session.user = user;
+        console.log('User authenticated:', user);
         res.redirect('/dashboard');
     } catch (error) {
         console.error('OAuth callback error:', error);
