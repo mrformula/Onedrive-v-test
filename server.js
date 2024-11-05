@@ -3,6 +3,10 @@ const path = require('path');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const DriveManager = require('./services/drive-manager');
+const TorrentManager = require('./services/qbittorrent');
+const Queue = require('./services/queue');
+const connectDB = require('./config/database');
+const Download = require('./models/download');
 const app = express();
 
 // Basic error handling
@@ -18,6 +22,11 @@ process.on('unhandledRejection', (error) => {
 
 // Initialize DriveManager
 const driveManager = new DriveManager();
+const qbt = new TorrentManager();
+const downloadQueue = new Queue(5, qbt, driveManager);
+
+// Connect to MongoDB
+connectDB();
 
 // Session middleware with MongoDB store
 app.use(session({
@@ -84,6 +93,57 @@ app.get('/api/auth/logout', (req, res) => {
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
+
+// Drive info endpoint
+app.get('/api/drive/info', async (req, res) => {
+    try {
+        if (!req.session.tokens) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        driveManager.oauth2Client.setCredentials(req.session.tokens);
+        const driveInfo = await driveManager.getDriveInfo(req.session.userId);
+        res.json(driveInfo);
+    } catch (error) {
+        console.error('Drive info error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Downloads queue endpoint
+app.get('/api/downloads/queue', async (req, res) => {
+    try {
+        if (!req.session.userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const status = downloadQueue.getStatus(req.session.userId);
+        res.json(status);
+    } catch (error) {
+        console.error('Queue status error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Download history endpoint
+app.get('/api/downloads/history', async (req, res) => {
+    try {
+        if (!req.session.userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const downloads = await Download.find({ userId: req.session.userId })
+            .sort({ createdAt: -1 })
+            .limit(10);
+        res.json(downloads);
+    } catch (error) {
+        console.error('Download history error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add torrent routes
+app.use('/api/torrent', require('./routes/torrent'));
 
 // Serve React app
 app.get('*', (req, res) => {
