@@ -1,11 +1,11 @@
-const QBittorrent = require('qbittorrent-api');
+const qbt = require('qbittorrent-api');
 const fs = require('fs');
 const path = require('path');
 const Download = require('../models/Download');
 
 class TorrentManager {
     constructor() {
-        this.client = new QBittorrent({
+        this.client = new qbt({
             host: 'localhost',
             port: 8080,
             username: process.env.QB_USERNAME || 'admin',

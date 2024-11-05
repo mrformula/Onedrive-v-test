@@ -11,7 +11,7 @@
         "express": "^4.17.1",
         "mongoose": "^6.0.12",
         "googleapis": "^92.0.0",
-        "qbittorrent-api": "^1.0.0",
+        "qbittorrent-api": "^2.1.0",
         "express-session": "^1.17.2",
         "connect-mongo": "^4.6.0",
         "parse-torrent": "^9.1.4",
