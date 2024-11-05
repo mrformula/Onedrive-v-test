@@ -1,4 +1,4 @@
-const qbt = require('qbittorrent-web-api');
+const qbt = require('qbittorrent-node');
 const fs = require('fs');
 const path = require('path');
 const Download = require('../models/Download');
@@ -9,7 +9,8 @@ class TorrentManager {
             host: 'localhost',
             port: 8080,
             username: process.env.QB_USERNAME || 'admin',
-            password: process.env.QB_PASSWORD || 'adminadmin'
+            password: process.env.QB_PASSWORD || 'adminadmin',
+            path: '/api/v2'
         });
 
         this.downloadPath = '/downloads';
@@ -26,7 +27,7 @@ class TorrentManager {
                 max_concurrent_downloads: 1,
                 max_ratio: 0,
                 max_ratio_enabled: true,
-                download_path: this.downloadPath
+                save_path: this.downloadPath
             });
             console.log('qBittorrent preferences set');
         } catch (error) {
