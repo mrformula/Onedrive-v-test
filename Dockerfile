@@ -33,14 +33,18 @@ RUN npm run build
 COPY supervisord.conf /etc/supervisord.conf
 
 # Create necessary directories
-RUN mkdir -p /mnt/gdrive /downloads
+RUN mkdir -p /mnt/gdrive /downloads /var/log
 
 # Set permissions
-RUN chmod -R 777 /mnt/gdrive /downloads
+RUN chmod -R 777 /mnt/gdrive /downloads /var/log
 
 # Environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 # Expose ports
 EXPOSE 3000 8080
