@@ -11,7 +11,8 @@ RUN apk add --no-cache \
     wget \
     git \
     build-base \
-    supervisor
+    supervisor \
+    netcat-openbsd
 
 # Set working directory
 WORKDIR /app
@@ -28,6 +29,22 @@ COPY . .
 
 # Build React app
 RUN npm run build
+
+# Create wait-for-it script
+RUN echo '#!/bin/sh\n\
+host="$1"\n\
+port="$2"\n\
+shift 2\n\
+cmd="$@"\n\
+\n\
+until nc -z "$host" "$port"; do\n\
+  echo "Waiting for $host:$port..."\n\
+  sleep 1\n\
+done\n\
+\n\
+echo "$host:$port is available"\n\
+exec $cmd' > /usr/local/bin/wait-for-it.sh && \
+chmod +x /usr/local/bin/wait-for-it.sh
 
 # Copy supervisor configuration
 COPY supervisord.conf /etc/supervisord.conf
@@ -49,9 +66,5 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
 # Expose ports
 EXPOSE 3000 8080
 
-# Add wait-for-it script
-COPY wait-for-it.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/wait-for-it.sh
-
-# Start services using supervisor
-CMD ["sh", "-c", "wait-for-it.sh localhost 8080 && supervisord -c /etc/supervisord.conf"]
+# Start services using supervisor directly
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
