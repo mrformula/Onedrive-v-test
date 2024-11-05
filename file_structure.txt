@@ -1,0 +1,44 @@
+project/
+├── config/
+│   └── database.js
+├── contexts/
+│   └── ThemeContext.jsx
+├── models/
+│   └── Download.js
+├── public/
+│   ├── dist/
+│   │   └── bundle.js
+│   └── index.html
+├── routes/
+│   └── torrent.js
+├── services/
+│   ├── drive-manager.js
+│   ├── qbittorrent.js
+│   └── queue.js
+├── src/
+│   ├── components/
+│   │   ├── Dashboard.jsx
+│   │   ├── DownloadHistory.jsx
+│   │   ├── DownloadQueue.jsx
+│   │   ├── DriveStatus.jsx
+│   │   ├── Login.jsx
+│   │   └── TorrentForm.jsx
+│   ├── contexts/
+│   │   ├── AuthContext.jsx
+│   │   └── ThemeContext.jsx
+│   ├── styles/
+│   │   ├── dark-mode.css
+│   │   └── main.css
+│   ├── utils/
+│   │   └── format.js
+│   ├── App.jsx
+│   └── index.js
+├── .dockerignore
+├── .env
+├── Dockerfile
+├── koyeb.yaml
+├── package.json
+├── server.js
+├── supervisord.conf
+├── wait-for-it.sh
+└── webpack.config.js

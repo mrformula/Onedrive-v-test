@@ -2,53 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
+import TorrentForm from './TorrentForm';
+import DownloadQueue from './DownloadQueue';
 
 function Dashboard() {
     const { user, isAuthenticated } = useAuth();
     const { isDarkMode, toggleDarkMode } = useTheme();
     const [driveInfo, setDriveInfo] = useState(null);
+    const [queueStatus, setQueueStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
-    console.log('Dashboard render:', { user, isAuthenticated, loading, error });
-
     useEffect(() => {
         if (!isAuthenticated) {
-            console.log('Not authenticated, redirecting to login');
             navigate('/login');
             return;
         }
         fetchDriveInfo();
+        // Start polling queue status
+        const interval = setInterval(fetchQueueStatus, 3000);
+        return () => clearInterval(interval);
     }, [isAuthenticated, navigate]);
 
     const fetchDriveInfo = async () => {
         try {
-            console.log('Fetching drive info...');
             const response = await fetch('/api/drive/info');
-            console.log('Drive info response:', response);
-
             if (!response.ok) {
                 if (response.status === 401) {
-                    console.log('Unauthorized, redirecting to login');
                     navigate('/login');
                     return;
                 }
                 throw new Error(`Failed to fetch drive info: ${response.status}`);
             }
-
             const data = await response.json();
-            console.log('Drive info data:', data);
             setDriveInfo(data);
         } catch (err) {
-            console.error('Error fetching drive info:', err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    console.log('Render state:', { loading, error, driveInfo, user });
+    const fetchQueueStatus = async () => {
+        try {
+            const response = await fetch('/api/queue/status');
+            if (response.ok) {
+                const data = await response.json();
+                setQueueStatus(data);
+            }
+        } catch (error) {
+            console.error('Error fetching queue status:', error);
+        }
+    };
+
+    const handleTorrentAdded = () => {
+        fetchQueueStatus(); // Refresh queue immediately after adding
+    };
 
     return (
         <div className={`dashboard ${isDarkMode ? 'dark-mode' : ''}`}>
@@ -68,16 +78,9 @@ function Dashboard() {
 
             <main className="dashboard-content">
                 {loading ? (
-                    <div className="loading">
-                        <div className="loading-spinner"></div>
-                        <p>Loading drive info...</p>
-                    </div>
+                    <div className="loading">Loading drive info...</div>
                 ) : error ? (
-                    <div className="error-message">
-                        <i className="bi bi-exclamation-triangle"></i>
-                        <p>{error}</p>
-                        <button onClick={fetchDriveInfo}>Retry</button>
-                    </div>
+                    <div className="error-message">{error}</div>
                 ) : (
                     <>
                         {driveInfo && (
@@ -107,10 +110,8 @@ function Dashboard() {
                                 </div>
                             </div>
                         )}
-                        <div className="add-torrent-section">
-                            <h2>Add New Download</h2>
-                            <p>Coming soon...</p>
-                        </div>
+                        <TorrentForm onSuccess={handleTorrentAdded} />
+                        <DownloadQueue status={queueStatus} />
                     </>
                 )}
             </main>

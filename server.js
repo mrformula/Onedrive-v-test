@@ -5,6 +5,8 @@ const MongoStore = require('connect-mongo');
 const { google } = require('googleapis');
 const DriveManager = require('./services/drive-manager');
 const path = require('path');
+const TorrentManager = require('./services/qbittorrent');
+const Queue = require('./services/queue');
 
 const app = express();
 
@@ -30,6 +32,10 @@ app.use(express.static('public'));
 
 // Initialize Drive Manager
 const driveManager = new DriveManager();
+
+// Initialize services
+const qbt = new TorrentManager();
+const downloadQueue = new Queue(5, qbt, driveManager);
 
 // Auth routes
 app.get('/auth/google', (req, res) => {
@@ -129,6 +135,36 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
+});
+
+// Add torrent route
+app.post('/api/torrent/add', requireAuth, async (req, res) => {
+    try {
+        const { magnetLink } = req.body;
+        const userId = req.session.userId;
+
+        if (!magnetLink) {
+            return res.status(400).json({ error: 'Magnet link is required' });
+        }
+
+        // Add to queue
+        await downloadQueue.add({
+            userId,
+            magnetLink,
+            addedAt: new Date()
+        });
+
+        res.json({ message: 'Torrent added to queue' });
+    } catch (error) {
+        console.error('Add torrent error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get queue status
+app.get('/api/queue/status', requireAuth, (req, res) => {
+    const status = downloadQueue.getStatus(req.session.userId);
+    res.json(status);
 });
 
 // Simple start
