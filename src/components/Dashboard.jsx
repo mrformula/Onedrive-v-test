@@ -1,10 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 function Dashboard() {
     const { user } = useAuth();
     const { isDarkMode, toggleDarkMode } = useTheme();
+    const [driveInfo, setDriveInfo] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchDriveInfo();
+    }, []);
+
+    const fetchDriveInfo = async () => {
+        try {
+            const response = await fetch('/api/drive/info');
+            if (!response.ok) {
+                throw new Error('Failed to fetch drive info');
+            }
+            const data = await response.json();
+            setDriveInfo(data);
+        } catch (err) {
+            setError(err.message);
+            console.error('Error fetching drive info:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className={`dashboard ${isDarkMode ? 'dark-mode' : ''}`}>
@@ -23,11 +46,57 @@ function Dashboard() {
             </header>
 
             <main className="dashboard-content">
-                <h2>Welcome to Torrent to Drive</h2>
-                <p>Coming soon...</p>
+                {loading ? (
+                    <div className="loading">Loading drive info...</div>
+                ) : error ? (
+                    <div className="error-message">{error}</div>
+                ) : (
+                    <>
+                        {driveInfo && (
+                            <div className="drive-status">
+                                <h2>Storage Status</h2>
+                                <div className="storage-bar">
+                                    <div
+                                        className="used-space"
+                                        style={{
+                                            width: `${(driveInfo.used / driveInfo.total) * 100}%`
+                                        }}
+                                    />
+                                </div>
+                                <div className="storage-info">
+                                    <div className="info-item">
+                                        <span>Total Space:</span>
+                                        <strong>{formatBytes(driveInfo.total)}</strong>
+                                    </div>
+                                    <div className="info-item">
+                                        <span>Used Space:</span>
+                                        <strong>{formatBytes(driveInfo.used)}</strong>
+                                    </div>
+                                    <div className="info-item">
+                                        <span>Free Space:</span>
+                                        <strong>{formatBytes(driveInfo.free)}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <div className="add-torrent-section">
+                            <h2>Add New Download</h2>
+                            <p>Coming soon...</p>
+                        </div>
+                    </>
+                )}
             </main>
         </div>
     );
 }
+
+// Helper function for formatting bytes
+const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 export default Dashboard; 
