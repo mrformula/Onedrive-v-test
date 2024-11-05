@@ -1,11 +1,12 @@
 const path = require('path');
 
 module.exports = {
+    mode: 'production',
     entry: './src/index.js',
     output: {
         path: path.resolve(__dirname, 'public/dist'),
         filename: 'bundle.js',
-        publicPath: '/'
+        publicPath: '/dist/'
     },
     module: {
         rules: [
@@ -27,8 +28,5 @@ module.exports = {
     },
     resolve: {
         extensions: ['.js', '.jsx']
-    },
-    devServer: {
-        historyApiFallback: true
     }
 }; 
