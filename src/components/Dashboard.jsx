@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 
 function Dashboard() {
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const { isDarkMode, toggleDarkMode } = useTheme();
     const [driveInfo, setDriveInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
+    console.log('Dashboard render:', { user, isAuthenticated, loading, error });
 
     useEffect(() => {
+        if (!isAuthenticated) {
+            console.log('Not authenticated, redirecting to login');
+            navigate('/login');
+            return;
+        }
         fetchDriveInfo();
-    }, []);
+    }, [isAuthenticated, navigate]);
 
     const fetchDriveInfo = async () => {
         try {
@@ -20,6 +29,11 @@ function Dashboard() {
             console.log('Drive info response:', response);
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    console.log('Unauthorized, redirecting to login');
+                    navigate('/login');
+                    return;
+                }
                 throw new Error(`Failed to fetch drive info: ${response.status}`);
             }
 

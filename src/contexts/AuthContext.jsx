@@ -13,20 +13,31 @@ export function AuthProvider({ children }) {
 
     const checkAuth = async () => {
         try {
+            console.log('Checking auth status...');
             const response = await fetch('/api/auth/check');
+            console.log('Auth check response:', response);
+
             const data = await response.json();
+            console.log('Auth check data:', data);
+
             if (data.authenticated) {
                 setUser(data.user);
                 setIsAuthenticated(true);
+                console.log('User is authenticated:', data.user);
+            } else {
+                console.log('User is not authenticated');
+                window.location.href = '/login';
             }
         } catch (error) {
             console.error('Auth check failed:', error);
+            window.location.href = '/login';
         } finally {
             setLoading(false);
         }
     };
 
     const login = () => {
+        console.log('Redirecting to Google login...');
         window.location.href = '/auth/google';
     };
 
@@ -35,10 +46,13 @@ export function AuthProvider({ children }) {
             await fetch('/api/auth/logout');
             setUser(null);
             setIsAuthenticated(false);
+            window.location.href = '/login';
         } catch (error) {
             console.error('Logout failed:', error);
         }
     };
+
+    console.log('Auth context state:', { user, isAuthenticated, loading });
 
     return (
         <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout }}>
@@ -47,4 +61,4 @@ export function AuthProvider({ children }) {
     );
 }
 
-export const useAuth = () => useContext(AuthContext); 
+export const useAuth = () => useContext(AuthContext);
