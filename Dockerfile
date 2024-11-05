@@ -2,9 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files first
-COPY package*.json ./
-COPY webpack.config.js ./
+# Copy all files
+COPY . .
 
 # Install dependencies
 RUN npm install
@@ -12,17 +11,12 @@ RUN npm install
 # Create necessary directories
 RUN mkdir -p src/contexts
 
-# Copy source files
-COPY src/ ./src/
-COPY public/ ./public/
+# Move ThemeContext to correct location if it exists
+RUN if [ -f "contexts/ThemeContext.jsx" ]; then \
+    mv contexts/ThemeContext.jsx src/contexts/; \
+    fi
 
 # Debug: List files
-RUN ls -la src/contexts/
-
-# Copy ThemeContext if it exists in root contexts folder
-COPY contexts/* src/contexts/ 2>/dev/null || true
-
-# Debug: List files again
 RUN ls -la src/contexts/
 
 # Build React app
