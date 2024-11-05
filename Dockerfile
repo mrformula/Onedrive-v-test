@@ -30,6 +30,7 @@ COPY models/ ./models/
 COPY services/ ./services/
 COPY config/ ./config/
 COPY routes/ ./routes/
+COPY server.js ./
 
 # Build React app
 RUN npm run build
@@ -47,6 +48,7 @@ EXPOSE 3000 8080
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Debug: List files
+RUN ls -la
 RUN ls -la models/
 RUN ls -la public/dist/
 
