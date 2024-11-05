@@ -2,11 +2,22 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy all files first
-COPY . .
+# Copy package files first
+COPY package*.json ./
+COPY webpack.config.js ./
 
 # Install dependencies
 RUN npm install
+
+# Create necessary directories
+RUN mkdir -p src/contexts
+
+# Copy source files
+COPY src/ ./src/
+COPY public/ ./public/
+
+# Debug: List files
+RUN ls -la src/contexts/
 
 # Build React app
 RUN npm run build
