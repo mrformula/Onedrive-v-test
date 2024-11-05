@@ -1,1 +1,27 @@
- 
+name: torrent-to-drive
+service:
+  name: web
+  ports:
+    - port: 3000
+      http: true
+  env:
+    - name: GOOGLE_CLIENT_ID
+      value: $GOOGLE_CLIENT_ID
+    - name: GOOGLE_CLIENT_SECRET
+      value: $GOOGLE_CLIENT_SECRET
+    - name: GOOGLE_REDIRECT_URI
+      value: $GOOGLE_REDIRECT_URI
+    - name: MONGODB_URI
+      value: $MONGODB_URI
+    - name: QB_USERNAME
+      value: $QB_USERNAME
+    - name: QB_PASSWORD
+      value: $QB_PASSWORD
+    - name: SESSION_SECRET
+      value: $SESSION_SECRET
+    - name: CLOUDFLARE_WORKER_URL
+      value: $CLOUDFLARE_WORKER_URL
+  dockerfile: Dockerfile
+  routes:
+    - path: /
+      public: true 
