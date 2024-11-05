@@ -1,19 +1,26 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 
-function PrivateRoute({ children }) {
+// Separate PrivateRoute component
+const PrivateRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
+    console.log('PrivateRoute:', { isAuthenticated, loading });
 
     if (loading) {
-        return <div className="loading">Loading...</div>;
+        return (
+            <div className="loading">
+                <div className="loading-spinner"></div>
+                <div>Loading...</div>
+            </div>
+        );
     }
 
-    return isAuthenticated ? children : <Navigate to="/login" />;
-}
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
 
 function App() {
     return (
@@ -30,7 +37,7 @@ function App() {
                                 </PrivateRoute>
                             }
                         />
-                        <Route path="/" element={<Navigate to="/dashboard" />} />
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                 </AuthProvider>
             </ThemeProvider>
