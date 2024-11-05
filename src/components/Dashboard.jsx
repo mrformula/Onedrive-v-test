@@ -4,9 +4,11 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import TorrentForm from './TorrentForm';
 import DownloadQueue from './DownloadQueue';
+import DriveStatus from './DriveStatus';
+import DownloadHistory from './DownloadHistory';
 
 function Dashboard() {
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, logout } = useAuth();
     const { isDarkMode, toggleDarkMode } = useTheme();
     const [driveInfo, setDriveInfo] = useState(null);
     const [queueStatus, setQueueStatus] = useState(null);
@@ -19,113 +21,97 @@ function Dashboard() {
             navigate('/login');
             return;
         }
-        fetchDriveInfo();
-        // Start polling queue status
-        const interval = setInterval(fetchQueueStatus, 3000);
-        return () => clearInterval(interval);
+
+        const fetchData = async () => {
+            try {
+                // Fetch drive info
+                const driveResponse = await fetch('/api/drive/info');
+                if (!driveResponse.ok) {
+                    throw new Error('Failed to fetch drive info');
+                }
+                const driveData = await driveResponse.json();
+                setDriveInfo(driveData);
+
+                // Start polling queue status
+                const pollQueue = async () => {
+                    try {
+                        const queueResponse = await fetch('/api/downloads/queue');
+                        if (!queueResponse.ok) {
+                            throw new Error('Failed to fetch queue status');
+                        }
+                        const queueData = await queueResponse.json();
+                        setQueueStatus(queueData);
+                    } catch (err) {
+                        console.error('Queue polling error:', err);
+                    }
+                };
+
+                // Poll every 3 seconds
+                pollQueue();
+                const interval = setInterval(pollQueue, 3000);
+                return () => clearInterval(interval);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, [isAuthenticated, navigate]);
 
-    const fetchDriveInfo = async () => {
+    const handleLogout = async () => {
         try {
-            const response = await fetch('/api/drive/info');
-            if (!response.ok) {
-                if (response.status === 401) {
-                    navigate('/login');
-                    return;
-                }
-                throw new Error(`Failed to fetch drive info: ${response.status}`);
-            }
-            const data = await response.json();
-            setDriveInfo(data);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchQueueStatus = async () => {
-        try {
-            const response = await fetch('/api/queue/status');
-            if (response.ok) {
-                const data = await response.json();
-                setQueueStatus(data);
-            }
+            await logout();
+            navigate('/login');
         } catch (error) {
-            console.error('Error fetching queue status:', error);
+            console.error('Logout failed:', error);
         }
     };
 
-    const handleTorrentAdded = () => {
-        fetchQueueStatus(); // Refresh queue immediately after adding
-    };
+    if (loading) {
+        return (
+            <div className="loading">
+                <div className="loading-spinner"></div>
+                <div>Loading dashboard...</div>
+            </div>
+        );
+    }
 
     return (
         <div className={`dashboard ${isDarkMode ? 'dark-mode' : ''}`}>
-            <header className="dashboard-header">
-                <h1>Torrent to Drive</h1>
-                <div className="user-controls">
+            <header>
+                <div className="user-info">
+                    {user?.picture && (
+                        <img src={user.picture} alt="Profile" className="avatar" />
+                    )}
+                    <span className="username">{user?.name}</span>
+                </div>
+                <div className="actions">
                     <button onClick={toggleDarkMode} className="theme-toggle">
                         <i className={`bi bi-${isDarkMode ? 'sun' : 'moon'}`}></i>
                     </button>
-                    {user && (
-                        <div className="user-info">
-                            <span>{user.email}</span>
-                        </div>
-                    )}
+                    <button onClick={handleLogout} className="logout-btn">
+                        <i className="bi bi-box-arrow-right"></i>
+                        Logout
+                    </button>
                 </div>
             </header>
 
-            <main className="dashboard-content">
-                {loading ? (
-                    <div className="loading">Loading drive info...</div>
-                ) : error ? (
+            <main>
+                {error ? (
                     <div className="error-message">{error}</div>
                 ) : (
                     <>
-                        {driveInfo && (
-                            <div className="drive-status">
-                                <h2>Storage Status</h2>
-                                <div className="storage-bar">
-                                    <div
-                                        className="used-space"
-                                        style={{
-                                            width: `${(driveInfo.used / driveInfo.total) * 100}%`
-                                        }}
-                                    />
-                                </div>
-                                <div className="storage-info">
-                                    <div className="info-item">
-                                        <span>Total Space:</span>
-                                        <strong>{formatBytes(driveInfo.total)}</strong>
-                                    </div>
-                                    <div className="info-item">
-                                        <span>Used Space:</span>
-                                        <strong>{formatBytes(driveInfo.used)}</strong>
-                                    </div>
-                                    <div className="info-item">
-                                        <span>Free Space:</span>
-                                        <strong>{formatBytes(driveInfo.free)}</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        <TorrentForm onSuccess={handleTorrentAdded} />
+                        <DriveStatus info={driveInfo} />
+                        <TorrentForm />
                         <DownloadQueue status={queueStatus} />
+                        <DownloadHistory />
                     </>
                 )}
             </main>
         </div>
     );
 }
-
-// Helper function for formatting bytes
-const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
 
 export default Dashboard; 
