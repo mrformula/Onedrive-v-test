@@ -4,6 +4,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const { google } = require('googleapis');
 const DriveManager = require('./services/drive-manager');
+const path = require('path');
 
 const app = express();
 
@@ -87,6 +88,11 @@ app.get('/api/auth/check', (req, res) => {
 // Simple health check
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
+});
+
+// Add this after all other routes but before error handler
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Basic error handler

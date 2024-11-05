@@ -3,9 +3,10 @@
     "version": "1.0.0",
     "main": "server.js",
     "scripts": {
-        "start": "NODE_ENV=production node server.js",
+        "start": "node server.js",
         "build": "webpack --mode production",
-        "dev": "nodemon server.js"
+        "dev": "nodemon server.js",
+        "postinstall": "npm run build"
     },
     "dependencies": {
         "express": "^4.17.1",
