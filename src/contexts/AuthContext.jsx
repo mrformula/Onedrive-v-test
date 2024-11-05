@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -6,6 +7,7 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         checkAuth();
@@ -24,13 +26,18 @@ export function AuthProvider({ children }) {
                 setUser(data.user);
                 setIsAuthenticated(true);
                 console.log('User is authenticated:', data.user);
+                navigate('/dashboard');
             } else {
                 console.log('User is not authenticated');
-                window.location.href = '/login';
+                setUser(null);
+                setIsAuthenticated(false);
+                navigate('/login');
             }
         } catch (error) {
             console.error('Auth check failed:', error);
-            window.location.href = '/login';
+            setUser(null);
+            setIsAuthenticated(false);
+            navigate('/login');
         } finally {
             setLoading(false);
         }
@@ -46,7 +53,7 @@ export function AuthProvider({ children }) {
             await fetch('/api/auth/logout');
             setUser(null);
             setIsAuthenticated(false);
-            window.location.href = '/login';
+            navigate('/login');
         } catch (error) {
             console.error('Logout failed:', error);
         }
