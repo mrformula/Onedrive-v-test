@@ -6,7 +6,7 @@ const DriveManager = require('./services/drive-manager');
 const TorrentManager = require('./services/qbittorrent');
 const Queue = require('./services/queue');
 const connectDB = require('./config/database');
-const Download = require('./models/download');
+const Download = require('./models/Download');
 const app = express();
 
 // Basic error handling

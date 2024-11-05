@@ -11,7 +11,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 WORKDIR /app
 
 # Create necessary directories
-RUN mkdir -p /downloads /config /var/log/qbittorrent src/utils public/dist
+RUN mkdir -p /downloads /config /var/log/qbittorrent src/utils public/dist models services config routes
 
 # Copy qBittorrent config
 COPY qBittorrent.conf /config/qBittorrent/qBittorrent.conf
@@ -23,8 +23,13 @@ COPY webpack.config.js ./
 # Install dependencies
 RUN npm install
 
-# Copy all source files
-COPY . .
+# Copy source files
+COPY src/ ./src/
+COPY public/ ./public/
+COPY models/ ./models/
+COPY services/ ./services/
+COPY config/ ./config/
+COPY routes/ ./routes/
 
 # Build React app
 RUN npm run build
@@ -42,6 +47,7 @@ EXPOSE 3000 8080
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Debug: List files
+RUN ls -la models/
 RUN ls -la public/dist/
 
 # Start services using supervisor
