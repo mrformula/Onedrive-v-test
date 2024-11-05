@@ -15,19 +15,26 @@ function Dashboard() {
 
     const fetchDriveInfo = async () => {
         try {
+            console.log('Fetching drive info...');
             const response = await fetch('/api/drive/info');
+            console.log('Drive info response:', response);
+
             if (!response.ok) {
-                throw new Error('Failed to fetch drive info');
+                throw new Error(`Failed to fetch drive info: ${response.status}`);
             }
+
             const data = await response.json();
+            console.log('Drive info data:', data);
             setDriveInfo(data);
         } catch (err) {
-            setError(err.message);
             console.error('Error fetching drive info:', err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
     };
+
+    console.log('Render state:', { loading, error, driveInfo, user });
 
     return (
         <div className={`dashboard ${isDarkMode ? 'dark-mode' : ''}`}>
@@ -47,9 +54,16 @@ function Dashboard() {
 
             <main className="dashboard-content">
                 {loading ? (
-                    <div className="loading">Loading drive info...</div>
+                    <div className="loading">
+                        <div className="loading-spinner"></div>
+                        <p>Loading drive info...</p>
+                    </div>
                 ) : error ? (
-                    <div className="error-message">{error}</div>
+                    <div className="error-message">
+                        <i className="bi bi-exclamation-triangle"></i>
+                        <p>{error}</p>
+                        <button onClick={fetchDriveInfo}>Retry</button>
+                    </div>
                 ) : (
                     <>
                         {driveInfo && (
