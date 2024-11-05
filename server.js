@@ -10,6 +10,17 @@ const Queue = require('./services/queue');
 
 const app = express();
 
+// Add at the top
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    console.error('Stack:', error.stack);
+});
+
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled Rejection:', error);
+    console.error('Stack:', error.stack);
+});
+
 // Connect to MongoDB
 connectDB()
     .then(() => console.log('MongoDB connected'))
@@ -30,12 +41,28 @@ app.use(session({
 app.use(express.json());
 app.use(express.static('public'));
 
-// Initialize Drive Manager
-const driveManager = new DriveManager();
+// Initialize services with error handling
+let qbt, driveManager, downloadQueue;
+try {
+    console.log('Initializing services...');
+    driveManager = new DriveManager();
+    console.log('DriveManager initialized');
 
-// Initialize services
-const qbt = new TorrentManager();
-const downloadQueue = new Queue(5, qbt, driveManager);
+    qbt = new TorrentManager();
+    console.log('TorrentManager initialized');
+
+    downloadQueue = new Queue(5, qbt, driveManager);
+    console.log('Queue initialized');
+} catch (error) {
+    console.error('Service initialization error:', error);
+    process.exit(1);
+}
+
+// Add more detailed logging
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
 
 // Auth routes
 app.get('/auth/google', (req, res) => {
@@ -131,10 +158,14 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Basic error handler
+// Update error handler
 app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error:', err);
+    console.error('Stack:', err.stack);
+    res.status(500).json({
+        error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
 });
 
 // Add torrent route
@@ -167,8 +198,19 @@ app.get('/api/queue/status', requireAuth, (req, res) => {
     res.json(status);
 });
 
-// Simple start
+// Update server start
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
+}).on('error', (error) => {
+    console.error('Server start error:', error);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM. Performing graceful shutdown...');
+    server.close(() => {
+        console.log('Server closed. Exiting process.');
+        process.exit(0);
+    });
 });
