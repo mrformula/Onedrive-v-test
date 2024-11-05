@@ -12,9 +12,11 @@ RUN npm install
 # Create necessary directories
 RUN mkdir -p src/contexts
 
-# Copy source files
-COPY src/ ./src/
-COPY public/ ./public/
+# Copy all source files
+COPY . .
+
+# Move ThemeContext to correct location
+RUN mv contexts/ThemeContext.jsx src/contexts/
 
 # Debug: List files
 RUN ls -la src/contexts/
