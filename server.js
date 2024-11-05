@@ -39,11 +39,19 @@ app.get('/auth/google', (req, res) => {
 app.get('/auth/google/callback', async (req, res) => {
     try {
         const { code } = req.query;
+        console.log('Received auth code:', code);
+
         const userInfo = await driveManager.handleAuthCallback(code, req.session);
+        console.log('Auth successful, user:', userInfo);
+
         res.redirect('/dashboard');
     } catch (error) {
-        console.error('Auth error:', error);
-        res.status(500).send('Authentication failed');
+        console.error('Auth callback error:', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response?.data
+        });
+        res.status(500).send(`Authentication failed: ${error.message}`);
     }
 });
 

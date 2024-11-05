@@ -27,22 +27,35 @@ class DriveManager {
 
     async handleAuthCallback(code, session) {
         try {
+            console.log('Getting tokens with code:', code);
             const { tokens } = await this.oauth2Client.getToken(code);
+            console.log('Received tokens:', tokens);
+
             this.oauth2Client.setCredentials(tokens);
             session.tokens = tokens;
 
-            // Get user info
-            const oauth2 = google.oauth2({ version: 'v2', auth: this.oauth2Client });
+            // Get user info with the new tokens
+            const oauth2 = google.oauth2({
+                version: 'v2',
+                auth: this.oauth2Client
+            });
+
+            console.log('Getting user info...');
             const userInfo = await oauth2.userinfo.get();
+            console.log('User info:', userInfo.data);
+
             session.userId = userInfo.data.id;
             session.userEmail = userInfo.data.email;
-
-            // Mount drive after authentication
-            await this.mountDrive(session.userId, tokens);
+            session.userName = userInfo.data.name;
+            session.userPicture = userInfo.data.picture;
 
             return userInfo.data;
         } catch (error) {
-            console.error('Auth callback error:', error);
+            console.error('Detailed auth error:', {
+                message: error.message,
+                stack: error.stack,
+                response: error.response?.data
+            });
             throw error;
         }
     }
