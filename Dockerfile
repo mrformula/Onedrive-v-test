@@ -43,11 +43,15 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Add healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Expose ports
 EXPOSE 3000 8080
 
+# Add wait-for-it script
+COPY wait-for-it.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
 # Start services using supervisor
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["sh", "-c", "wait-for-it.sh localhost 8080 && supervisord -c /etc/supervisord.conf"]

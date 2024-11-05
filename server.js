@@ -10,6 +10,11 @@ const path = require('path');
 
 const app = express();
 
+// Health check route should be first
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 // Error handling for uncaught exceptions
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
@@ -119,11 +124,6 @@ app.get('/api/drive-info', async (req, res) => {
 // Serve React app for all other routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Add at the top with other routes
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
 });
 
 const PORT = process.env.PORT || 3000;
