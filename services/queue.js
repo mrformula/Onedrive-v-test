@@ -1,8 +1,10 @@
 class Queue {
-    constructor(maxSize = 5) {
+    constructor(maxSize = 5, qbt, driveManager) {
         this.maxSize = maxSize;
         this.queue = [];
         this.activeDownloads = new Map();
+        this.qbt = qbt;
+        this.driveManager = driveManager;
     }
 
     async add(downloadItem) {

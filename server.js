@@ -53,7 +53,7 @@ let qbt, driveManager, downloadQueue;
 try {
     qbt = new QBittorrent();
     driveManager = new DriveManager();
-    downloadQueue = new Queue(5);
+    downloadQueue = new Queue(5, qbt, driveManager);
     console.log('Services initialized successfully');
 } catch (error) {
     console.error('Service initialization error:', error);
