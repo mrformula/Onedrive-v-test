@@ -122,6 +122,8 @@ class DriveManager {
     async getDriveInfo(userId) {
         try {
             console.log('Getting drive info for user:', userId);
+            console.log('Checking auth client:', this.oauth2Client);
+            console.log('Auth client credentials:', this.oauth2Client.credentials);
 
             const about = await this.drive.about.get({
                 auth: this.oauth2Client,
@@ -130,31 +132,52 @@ class DriveManager {
 
             console.log('Drive API response:', about.data);
 
+            if (!about.data.storageQuota) {
+                throw new Error('No storage quota information received');
+            }
+
             const { storageQuota, user } = about.data;
 
-            // Get recent activity
-            const recentFiles = await this.drive.files.list({
-                auth: this.oauth2Client,
-                pageSize: 10,
-                fields: 'files(id,name,mimeType,size,modifiedTime)',
-                orderBy: 'modifiedTime desc'
-            });
-
-            console.log('Recent files:', recentFiles.data);
-
-            return {
+            // Add default values for safety
+            const info = {
                 total: parseInt(storageQuota.limit) || 0,
                 used: parseInt(storageQuota.usage) || 0,
                 free: parseInt(storageQuota.limit - storageQuota.usage) || 0,
-                email: user.emailAddress,
-                recentFiles: recentFiles.data.files
+                email: user?.emailAddress || 'Unknown',
+                recentFiles: []
             };
+
+            console.log('Processed drive info:', info);
+
+            // Get recent activity
+            try {
+                const recentFiles = await this.drive.files.list({
+                    auth: this.oauth2Client,
+                    pageSize: 10,
+                    fields: 'files(id,name,mimeType,size,modifiedTime)',
+                    orderBy: 'modifiedTime desc'
+                });
+
+                info.recentFiles = recentFiles.data.files;
+                console.log('Recent files fetched:', recentFiles.data);
+            } catch (error) {
+                console.error('Error fetching recent files:', error);
+                // Don't fail completely if recent files fetch fails
+            }
+
+            return info;
         } catch (error) {
             console.error('Drive info error details:', {
                 message: error.message,
                 stack: error.stack,
-                response: error.response?.data
+                response: error.response?.data,
+                credentials: this.oauth2Client.credentials ? 'Present' : 'Missing'
             });
+
+            if (!this.oauth2Client.credentials) {
+                throw new Error('No valid credentials. Please login again.');
+            }
+
             throw new Error('Failed to get Drive info: ' + error.message);
         }
     }

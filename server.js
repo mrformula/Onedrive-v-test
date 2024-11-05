@@ -67,25 +67,39 @@ const requireAuth = (req, res, next) => {
 // Protected route example
 app.get('/api/drive/info', requireAuth, async (req, res) => {
     try {
-        console.log('Drive info request from user:', req.session.userId);
-        console.log('Session tokens:', req.session.tokens);
+        console.log('Drive info request received');
+        console.log('User ID:', req.session.userId);
+        console.log('Session:', req.session);
 
         if (!req.session.tokens) {
-            return res.status(401).json({ error: 'No auth tokens found' });
+            console.log('No tokens found in session');
+            return res.status(401).json({ error: 'No auth tokens found. Please login again.' });
         }
 
-        // Set credentials from session
+        console.log('Setting credentials...');
         driveManager.oauth2Client.setCredentials(req.session.tokens);
 
+        console.log('Fetching drive info...');
         const info = await driveManager.getDriveInfo(req.session.userId);
-        console.log('Drive info:', info);
+        console.log('Drive info fetched:', info);
 
         res.json(info);
     } catch (error) {
-        console.error('Drive info error:', error);
+        console.error('Drive info error:', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response?.data
+        });
+
+        // Check if token expired
+        if (error.message.includes('invalid_grant') || error.message.includes('Invalid Credentials')) {
+            console.log('Token expired, redirecting to login');
+            return res.status(401).json({ error: 'Session expired. Please login again.' });
+        }
+
         res.status(500).json({
             error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
