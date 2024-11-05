@@ -1,0 +1,38 @@
+.dark-mode {
+    --background-color: #1a1a1a;
+    --card-background: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --border-color: #404040;
+}
+
+.dark-mode .drive-status,
+.dark-mode .torrent-form,
+.dark-mode .download-queue,
+.dark-mode .download-history {
+    background: var(--card-background);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .input-group input {
+    background: #363636;
+    border-color: #404040;
+    color: var(--text-primary);
+}
+
+.dark-mode .input-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+}
+
+.dark-mode .storage-bar {
+    background: #404040;
+}
+
+.dark-mode .history-item {
+    border-color: #404040;
+}
+
+.dark-mode .theme-toggle {
+    color: var(--text-primary);
+}
