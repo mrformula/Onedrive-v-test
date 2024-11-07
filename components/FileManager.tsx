@@ -127,7 +127,8 @@ export default function FileManager() {
             console.log('URL copied successfully');
         } catch (error) {
             console.error('Error copying link:', error);
-            alert('Failed to copy download link. Please try again.');
+            // Don't show alert, just log the error
+            console.log('Failed to copy link:', error);
         }
     }
 

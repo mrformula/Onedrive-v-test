@@ -297,7 +297,6 @@ export class OneDriveService {
             // Get file details including download URL
             const response = await this.client
                 .api(`/me/drive/items/${itemId}`)
-                .select('name,@microsoft.graph.downloadUrl')
                 .get();
 
             console.log('File details response:', response);
