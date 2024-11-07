@@ -1,5 +1,5 @@
 // Constants
-const TENANT_ID = 'b296947a-6915-4c83-9fff-25fe92a380e9'
+const TENANT_ID = ''
 const USER_EMAIL = 'mr.formulaa@tf2.onmicrosoft.com' // Your Microsoft Email 
 const ALLOWED_COUNTRIES = ['BD', 'SG']
 const MICROSOFT_CLIENT_ID = ''
