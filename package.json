@@ -1,0 +1,43 @@
+{
+    "name": "onedrive-file-manager",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "@azure/msal-browser": "^3.1.0",
+        "@azure/msal-react": "^2.0.3",
+        "@microsoft/microsoft-graph-client": "^3.0.7",
+        "@types/next-auth": "^3.15.0",
+        "@types/node": "^20.9.0",
+        "@types/react": "^18.2.37",
+        "@types/react-dom": "^18.2.15",
+        "axios": "^1.6.2",
+        "clsx": "^2.1.1",
+        "framer-motion": "^11.11.11",
+        "isomorphic-fetch": "^3.0.0",
+        "lucide-react": "^0.454.0",
+        "mongoose": "^8.0.0",
+        "next": "14.0.3",
+        "next-auth": "^4.24.5",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-hotkeys-hook": "^4.6.1",
+        "react-icons": "^4.12.0",
+        "tailwind-merge": "^2.5.4",
+        "tailwindcss": "^3.3.0"
+    },
+    "devDependencies": {
+        "@types/isomorphic-fetch": "^0.0.39",
+        "@types/microsoft-graph": "^2.40.0",
+        "@types/mongoose": "^5.11.97",
+        "autoprefixer": "^10.0.1",
+        "postcss": "^8",
+        "postcss-import": "^15.1.0",
+        "typescript": "^5"
+    }
+}
