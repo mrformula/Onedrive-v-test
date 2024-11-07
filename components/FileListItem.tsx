@@ -25,19 +25,27 @@ export default function FileListItem({
     const handleCopyLink = async (e: React.MouseEvent) => {
         e.stopPropagation()
         if (!isCopied) {
-            onCopyLink(file)
-            setIsCopied(true)
+            try {
+                await onCopyLink(file)
+                setIsCopied(true)
 
-            const fileElement = document.getElementById(`file-${file.id}`)
-            if (fileElement) {
-                fileElement.classList.add('border', 'border-green-500')
+                const fileElement = document.getElementById(`file-${file.id}`)
+                if (fileElement) {
+                    fileElement.classList.add('border', 'border-green-500')
+                }
+
+                // Remove copied state after 2 seconds
+                setTimeout(() => {
+                    setIsCopied(false)
+                    const fileElement = document.getElementById(`file-${file.id}`)
+                    if (fileElement) {
+                        fileElement.classList.remove('border', 'border-green-500')
+                    }
+                }, 2000)
+            } catch (error) {
+                console.error('Failed to copy link:', error)
+                alert('Failed to copy download link')
             }
-        } else {
-            const fileElement = document.getElementById(`file-${file.id}`)
-            if (fileElement) {
-                fileElement.classList.remove('border', 'border-green-500')
-            }
-            setIsCopied(false)
         }
     }
 

@@ -311,8 +311,8 @@ export class OneDriveService {
             const encodedFileName = encodeURIComponent(fileName);
             const encodedUrl = encodeURIComponent(directUrl);
 
-            // Create Cloudflare Worker URL
-            const workerUrl = `https://tgdown.k-drama.workers.dev/download/${encodedFileName}?url=${encodedUrl}`;
+            // Create Cloudflare Worker URL with proper encoding
+            const workerUrl = `https://tgdown.k-drama.workers.dev/?url=${encodedUrl}`;
 
             console.log('Generated download URL:', {
                 fileName,
