@@ -97,10 +97,23 @@ export default function FileManager() {
             const downloadUrl = await service.getDownloadUrl(file.id)
 
             // Log the URL before copying
-            console.log('Copying URL:', downloadUrl)
+            console.log('Generated URL:', downloadUrl)
 
-            // Use clipboard API to copy
-            await navigator.clipboard.writeText(downloadUrl)
+            // Try to copy using Clipboard API
+            try {
+                await navigator.clipboard.writeText(downloadUrl)
+                console.log('URL copied successfully')
+            } catch (clipboardError) {
+                console.error('Clipboard API failed:', clipboardError)
+
+                // Fallback: Create temporary input element
+                const tempInput = document.createElement('input')
+                tempInput.value = downloadUrl
+                document.body.appendChild(tempInput)
+                tempInput.select()
+                document.execCommand('copy')
+                document.body.removeChild(tempInput)
+            }
 
             // Show visual feedback
             const fileElement = document.getElementById(`file-${file.id}`)
@@ -110,11 +123,8 @@ export default function FileManager() {
                     fileElement.classList.remove('border', 'border-green-500')
                 }, 2000)
             }
-
-            // Optional: Show success message
-            console.log('URL copied successfully')
         } catch (error) {
-            console.error('Failed to copy link:', error)
+            console.error('Failed to get or copy download link:', error)
             alert('Failed to copy download link')
         }
     }
