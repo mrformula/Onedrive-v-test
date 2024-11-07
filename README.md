@@ -55,48 +55,117 @@
 
 ## 🚀 Deployment Guide
 
-<details>
-<summary>Prerequisites</summary>
-
-- Microsoft Azure Account
-- Cloudflare Account
-- Vercel Account
-- GitHub Account
-- MongoDB Atlas Account
-
-</details>
-
 ### 1️⃣ Azure AD Setup
 
-<details>
-<summary>Step-by-step guide</summary>
+1. **Create App Registration**
+   ```bash
+   1. Go to Azure Portal > Azure Active Directory
+   2. App Registrations > New Registration
+   3. Name your app
+   4. Select "Accounts in any organizational directory"
+   5. Set Redirect URI: https://your-domain.vercel.app/api/auth/callback/azure-ad
+   ```
 
-[Rest of the Azure setup content...]
-</details>
+2. **Configure Permissions**
+   ```bash
+   1. API Permissions > Add Permission
+   2. Microsoft Graph > Application Permissions
+   3. Add these permissions:
+      - Files.Read.All
+      - Files.ReadWrite.All
+      - User.Read.All
+      - Sites.Read.All
+   4. Grant Admin Consent
+   ```
+
+3. **Generate Client Secret**
+   ```bash
+   1. Certificates & Secrets > New Client Secret
+   2. Add description and select expiry
+   3. Copy the secret value immediately
+   ```
+
+4. **Note Important Values**
+   ```bash
+   Client ID: From Overview page
+   Client Secret: Generated in step 3
+   Tenant ID: From Overview page
+   ```
 
 ### 2️⃣ Cloudflare Setup
 
-<details>
-<summary>Step-by-step guide</summary>
+1. **Create Worker**
+   ```bash
+   1. Login to Cloudflare Dashboard
+   2. Workers & Pages > Create Worker
+   3. Name your worker (e.g., onedrive-cdn)
+   ```
 
-[Rest of the Cloudflare setup content...]
-</details>
+2. **Deploy Worker Code**
+   ```javascript
+   // Copy the entire worker.js code
+   // Deploy using Quick Edit
+   ```
+
+3. **Set Environment Variables**
+   ```bash
+   1. Go to Worker Settings
+   2. Variables > Add Variable
+   3. Add these variables:
+      MICROSOFT_CLIENT_ID=your_client_id
+      MICROSOFT_CLIENT_SECRET=your_client_secret
+   ```
 
 ### 3️⃣ MongoDB Setup
 
-<details>
-<summary>Step-by-step guide</summary>
+1. **Create Cluster**
+   ```bash
+   1. MongoDB Atlas > Create Cluster
+   2. Select Free Tier
+   3. Choose region closest to users
+   ```
 
-[Rest of the MongoDB setup content...]
-</details>
+2. **Configure Database Access**
+   ```bash
+   1. Create database user
+   2. Set password
+   3. Add IP access (0.0.0.0/0 for all)
+   ```
+
+3. **Get Connection String**
+   ```bash
+   1. Connect > Connect your application
+   2. Copy connection string
+   3. Replace <password> with actual password
+   ```
 
 ### 4️⃣ Vercel Deployment
 
-<details>
-<summary>Step-by-step guide</summary>
+1. **Fork & Deploy**
+   ```bash
+   1. Fork GitHub repository
+   2. Go to Vercel Dashboard
+   3. New Project > Import Git Repository
+   4. Select forked repository
+   ```
 
-[Rest of the Vercel deployment content...]
-</details>
+2. **Environment Variables**
+   ```bash
+   Add these variables:
+   MONGODB_URI=mongodb+srv://...
+   MICROSOFT_CLIENT_ID=your_client_id
+   MICROSOFT_CLIENT_SECRET=your_client_secret
+   NEXTAUTH_URL=https://your-domain.vercel.app
+   NEXTAUTH_SECRET=generated_secret_key
+   ```
+
+3. **Deploy Settings**
+   ```bash
+   Framework Preset: Next.js
+   Build Command: next build
+   Install Command: npm install
+   Output Directory: .next
+   ```
 
 ## 💻 Local Development
 
