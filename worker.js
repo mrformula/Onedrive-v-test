@@ -1,30 +1,54 @@
-// Environment variables will be injected by Cloudflare
-const ALLOWED_COUNTRIES = ['BD', 'SG'] // Only Bangladesh and Singapore
+// Constants
 const TENANT_ID = 'b296947a-6915-4c83-9fff-25fe92a380e9'
-const USER_EMAIL = 'masudrana@tf267.onmicrosoft.com'
+const USER_EMAIL = 'mr.formulaa@tf2.onmicrosoft.com' // Your Microsoft Email 
+const ALLOWED_COUNTRIES = ['BD', 'SG']
+const MICROSOFT_CLIENT_ID = ''
+const MICROSOFT_CLIENT_SECRET = ''
 
 addEventListener('fetch', event => {
     event.respondWith(handleRequest(event.request))
 })
 
 async function getAccessToken() {
-    const tokenEndpoint = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`
+    try {
+        const tokenEndpoint = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`
 
-    const response = await fetch(tokenEndpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
+        const body = new URLSearchParams({
+            grant_type: 'client_credentials',
             client_id: MICROSOFT_CLIENT_ID,
             client_secret: MICROSOFT_CLIENT_SECRET,
-            grant_type: 'client_credentials',
             scope: 'https://graph.microsoft.com/.default'
         })
-    })
 
-    const data = await response.json()
-    return data.access_token
+        console.log('Requesting token...')
+
+        const tokenResponse = await fetch(tokenEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body.toString()
+        })
+
+        if (!tokenResponse.ok) {
+            const errorData = await tokenResponse.json()
+            console.error('Token response error:', errorData)
+            throw new Error(`Token request failed: ${errorData.error_description || errorData.error}`)
+        }
+
+        const tokenData = await tokenResponse.json()
+        console.log('Token response received')
+
+        if (!tokenData.access_token) {
+            console.error('Token data:', tokenData)
+            throw new Error('No access token in response')
+        }
+
+        return tokenData.access_token
+    } catch (error) {
+        console.error('Token error:', error)
+        throw new Error(`Failed to get access token: ${error.message}`)
+    }
 }
 
 async function handleRequest(request) {
@@ -40,9 +64,7 @@ async function handleRequest(request) {
     if (!ALLOWED_COUNTRIES.includes(country)) {
         return new Response('Access denied: This content is not available in your country', {
             status: 403,
-            headers: {
-                'Content-Type': 'text/plain'
-            }
+            headers: { 'Content-Type': 'text/plain' }
         })
     }
 
@@ -76,22 +98,52 @@ async function handleRequest(request) {
             return new Response('Download URL not found', { status: 404 })
         }
 
-        // Add CORS headers
+        // Get range header from request
+        const range = request.headers.get('range')
+
+        // Add CORS and caching headers
         const headers = new Headers({
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
             'Access-Control-Allow-Headers': '*',
-            'Content-Type': 'application/octet-stream'
+            'Accept-Ranges': 'bytes',
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="${data.name}"`,
+            'Cache-Control': 'public, max-age=31536000'
         })
 
-        // Fetch and stream the file
-        const fileResponse = await fetch(downloadUrl)
+        // If range header exists, create partial response
+        if (range) {
+            const fileResponse = await fetch(downloadUrl, {
+                headers: { 'Range': range }
+            })
+
+            // Get content range and size from OneDrive response
+            const contentRange = fileResponse.headers.get('content-range')
+            const size = parseInt(contentRange?.split('/')[1] || '0')
+
+            // Add content range header
+            headers.set('Content-Range', contentRange || '')
+            headers.set('Content-Length', fileResponse.headers.get('content-length') || '')
+
+            return new Response(fileResponse.body, {
+                status: 206,
+                headers: headers
+            })
+        }
+
+        // If no range header, stream entire file
+        const fileResponse = await fetch(downloadUrl, {
+            cf: {
+                cacheTtl: 31536000,
+                cacheEverything: true
+            }
+        })
+
+        headers.set('Content-Length', fileResponse.headers.get('content-length') || '')
 
         return new Response(fileResponse.body, {
-            headers: {
-                ...Object.fromEntries(fileResponse.headers),
-                ...Object.fromEntries(headers)
-            }
+            headers: headers
         })
     } catch (err) {
         console.error('Error:', err)
