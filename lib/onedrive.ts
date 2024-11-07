@@ -321,11 +321,7 @@ export class OneDriveService {
             return workerUrl;
         } catch (error) {
             console.error('Error in getDownloadUrl:', error);
-            if (error instanceof Error) {
-                throw new Error(`Failed to get download URL: ${error.message}`);
-            } else {
-                throw new Error('Failed to get download URL: Unknown error');
-            }
+            throw new Error('Failed to get download URL');
         }
     }
 
