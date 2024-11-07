@@ -42,6 +42,9 @@ export default function FileListItem({
                         fileElement.classList.remove('border', 'border-green-500')
                     }
                 }, 2000)
+
+                // Optional: Show success message
+                console.log('Link copied successfully')
             } catch (error) {
                 console.error('Failed to copy link:', error)
                 alert('Failed to copy download link')

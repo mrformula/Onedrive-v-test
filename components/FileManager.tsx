@@ -96,16 +96,26 @@ export default function FileManager() {
             const service = await getOneDriveService()
             const downloadUrl = await service.getDownloadUrl(file.id)
 
-            await navigator.clipboard.writeText(downloadUrl)
-            setCopiedFiles(prev => new Set(prev).add(file.id))
+            // Log the URL before copying
+            console.log('Copying URL:', downloadUrl)
 
-            // Remove alert and just show visual feedback
+            // Use clipboard API to copy
+            await navigator.clipboard.writeText(downloadUrl)
+
+            // Show visual feedback
             const fileElement = document.getElementById(`file-${file.id}`)
             if (fileElement) {
-                fileElement.classList.add('border-green-500', 'border-2')
+                fileElement.classList.add('border', 'border-green-500')
+                setTimeout(() => {
+                    fileElement.classList.remove('border', 'border-green-500')
+                }, 2000)
             }
+
+            // Optional: Show success message
+            console.log('URL copied successfully')
         } catch (error) {
             console.error('Failed to copy link:', error)
+            alert('Failed to copy download link')
         }
     }
 
