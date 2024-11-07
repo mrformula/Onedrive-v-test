@@ -294,20 +294,36 @@ export class OneDriveService {
 
     async getDownloadUrl(itemId: string): Promise<string> {
         try {
+            // Get file details including download URL
             const response = await this.client
                 .api(`/me/drive/items/${itemId}`)
                 .select('name,@microsoft.graph.downloadUrl')
                 .get();
 
-            const directUrl = response['@microsoft.graph.downloadUrl']
-            const fileName = response.name
+            if (!response['@microsoft.graph.downloadUrl']) {
+                throw new Error('Download URL not found');
+            }
 
-            // Convert to Cloudflare Worker URL with filename
-            const workerUrl = `https://tgdown.k-drama.workers.dev/download/${encodeURIComponent(fileName)}?url=${encodeURIComponent(directUrl)}`
+            const directUrl = response['@microsoft.graph.downloadUrl'];
+            const fileName = response.name;
+
+            // Encode both filename and URL properly
+            const encodedFileName = encodeURIComponent(fileName);
+            const encodedUrl = encodeURIComponent(directUrl);
+
+            // Create Cloudflare Worker URL
+            const workerUrl = `https://tgdown.k-drama.workers.dev/download/${encodedFileName}?url=${encodedUrl}`;
+
+            console.log('Generated download URL:', {
+                fileName,
+                directUrl,
+                workerUrl
+            });
+
             return workerUrl;
         } catch (error) {
-            console.error('Error getting download URL:', error)
-            throw error
+            console.error('Error getting download URL:', error);
+            throw new Error('Failed to get download URL');
         }
     }
 
