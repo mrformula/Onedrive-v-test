@@ -307,24 +307,16 @@ export class OneDriveService {
 
             const directUrl = response['@microsoft.graph.downloadUrl'];
             const fileName = response.name;
-            const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
 
             // Log the values
             console.log('Direct URL:', directUrl);
             console.log('File name:', fileName);
 
-            // Create Cloudflare Worker URL with filename
-            const workerUrl = `https://tgdown.k-drama.workers.dev/download/${encodeURIComponent(fileName)}?url=${encodeURIComponent(directUrl)}&type=${fileExtension}`;
+            // Create short Cloudflare Worker URL
+            const workerUrl = `https://tgdown.k-drama.workers.dev/${encodeURIComponent(fileName)}?id=${itemId}`;
 
             // Log the final URL
             console.log('Worker URL:', workerUrl);
-
-            // Verify URL is valid
-            try {
-                new URL(workerUrl);
-            } catch (e) {
-                throw new Error('Generated URL is invalid');
-            }
 
             return workerUrl;
         } catch (error) {
