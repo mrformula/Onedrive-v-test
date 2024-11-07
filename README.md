@@ -105,13 +105,7 @@
    ```javascript
    // Copy the entire worker.js code
    // Deploy using Quick Edit
-   ```
 
-3. **Set Environment Variables**
-   ```bash
-   1. Go to Worker Settings
-   2. Variables > Add Variable
-   3. Add these variables:
       MICROSOFT_CLIENT_ID=your_client_id
       MICROSOFT_CLIENT_SECRET=your_client_secret
    ```
@@ -259,6 +253,6 @@ MIT License - see [LICENSE.md](LICENSE.md)
 
 <div align="center">
 
-Made with ❤️ by [Your Team Name]
+Made with ❤️ by Mr.Formula
 
 </div>
