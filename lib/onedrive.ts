@@ -21,33 +21,31 @@ export class OneDriveService {
             const publicPath = '/Public'
             const fullPath = path === '/' ? publicPath : `${publicPath}${path}`
 
-            // Get files and folder stats in parallel
-            const [filesResponse, publicStats] = await Promise.all([
-                this.client
-                    .api(`/me/drive/root:${fullPath}:/children`)
-                    .select('id,name,size,folder,lastModifiedDateTime,@microsoft.graph.downloadUrl')
-                    .top(1000)
-                    .get(),
-                this.getPublicFolderStats()
-            ]);
+            // Get files with minimal fields for faster response
+            const filesResponse = await this.client
+                .api(`/me/drive/root:${fullPath}:/children`)
+                .select('id,name,size,folder,lastModifiedDateTime,@microsoft.graph.downloadUrl')
+                .top(1000)
+                .get();
 
-            // Update total stats
-            this.totalSiteStats = publicStats;
-
-            // Process items in parallel with batched requests
+            // Process items in parallel
             const items = await Promise.all(
                 filesResponse.value.map(async (item: any): Promise<FileItem> => {
                     let size = item.size || 0;
                     let itemCount = 0;
 
                     if (item.folder) {
-                        // Get folder details in background
-                        const details = this.getFolderDetails(item.id)
-                            .then(result => {
-                                size = result.size;
-                                itemCount = result.itemCount;
-                            })
-                            .catch(console.error);
+                        // Check cache first
+                        const cached = this.folderDetailsCache.get(item.id);
+                        if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+                            size = cached.size;
+                            itemCount = cached.itemCount;
+                        } else {
+                            // Get folder details in background and cache
+                            const details = await this.getFolderDetails(item.id);
+                            size = details.size;
+                            itemCount = details.itemCount;
+                        }
                     }
 
                     return {
@@ -79,23 +77,28 @@ export class OneDriveService {
         }
 
         try {
-            let totalSize = 0;
-            let totalItems = 0;
+            // Get folder items with minimal fields
             const response = await this.client
                 .api(`/me/drive/items/${folderId}/children`)
                 .select('id,size,folder')
                 .get();
 
-            for (const item of response.value) {
-                if (item.folder) {
-                    const subFolderDetails = await this.getFolderDetails(item.id);
-                    totalSize += subFolderDetails.size;
-                    totalItems += subFolderDetails.itemCount + 1;
-                } else {
-                    totalSize += item.size || 0;
-                    totalItems += 1;
-                }
-            }
+            let totalSize = 0;
+            let totalItems = 0;
+
+            // Process all items in parallel
+            await Promise.all(
+                response.value.map(async (item: any) => {
+                    if (item.folder) {
+                        const subFolderDetails = await this.getFolderDetails(item.id);
+                        totalSize += subFolderDetails.size;
+                        totalItems += subFolderDetails.itemCount + 1;
+                    } else {
+                        totalSize += item.size || 0;
+                        totalItems += 1;
+                    }
+                })
+            );
 
             // Cache the result
             this.folderDetailsCache.set(folderId, {
