@@ -96,24 +96,19 @@ export default function FileManager() {
             const service = await getOneDriveService()
             const downloadUrl = await service.getDownloadUrl(file.id)
 
-            // Log the URL before copying
             console.log('Generated URL:', downloadUrl)
 
-            // Try to copy using Clipboard API
-            try {
-                await navigator.clipboard.writeText(downloadUrl)
-                console.log('URL copied successfully')
-            } catch (clipboardError) {
-                console.error('Clipboard API failed:', clipboardError)
+            // Create temporary textarea element
+            const textarea = document.createElement('textarea')
+            textarea.value = downloadUrl
+            document.body.appendChild(textarea)
 
-                // Fallback: Create temporary input element
-                const tempInput = document.createElement('input')
-                tempInput.value = downloadUrl
-                document.body.appendChild(tempInput)
-                tempInput.select()
-                document.execCommand('copy')
-                document.body.removeChild(tempInput)
-            }
+            // Select and copy
+            textarea.select()
+            document.execCommand('copy')
+
+            // Remove temporary element
+            document.body.removeChild(textarea)
 
             // Show visual feedback
             const fileElement = document.getElementById(`file-${file.id}`)
@@ -123,6 +118,8 @@ export default function FileManager() {
                     fileElement.classList.remove('border', 'border-green-500')
                 }, 2000)
             }
+
+            console.log('URL copied successfully')
         } catch (error) {
             console.error('Failed to get or copy download link:', error)
             alert('Failed to copy download link')

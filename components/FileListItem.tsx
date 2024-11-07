@@ -29,6 +29,7 @@ export default function FileListItem({
                 await onCopyLink(file)
                 setIsCopied(true)
 
+                // Show visual feedback
                 const fileElement = document.getElementById(`file-${file.id}`)
                 if (fileElement) {
                     fileElement.classList.add('border', 'border-green-500')
@@ -44,7 +45,6 @@ export default function FileListItem({
                 }, 2000)
             } catch (error) {
                 console.error('Failed to copy link:', error)
-                alert('Failed to copy download link')
             }
         }
     }
