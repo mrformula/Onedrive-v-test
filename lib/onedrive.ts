@@ -296,13 +296,14 @@ export class OneDriveService {
         try {
             const response = await this.client
                 .api(`/me/drive/items/${itemId}`)
-                .select('@microsoft.graph.downloadUrl')
+                .select('name,@microsoft.graph.downloadUrl')
                 .get();
 
             const directUrl = response['@microsoft.graph.downloadUrl']
+            const fileName = response.name
 
-            // Convert to Cloudflare Worker URL
-            const workerUrl = `https://tgdown.k-drama.workers.dev/?url=${encodeURIComponent(directUrl)}`
+            // Convert to Cloudflare Worker URL with filename
+            const workerUrl = `https://tgdown.k-drama.workers.dev/download/${encodeURIComponent(fileName)}?url=${encodeURIComponent(directUrl)}`
             return workerUrl;
         } catch (error) {
             console.error('Error getting download URL:', error)
