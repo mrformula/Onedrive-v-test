@@ -305,11 +305,10 @@ export class OneDriveService {
                 throw new Error('Download URL not found in response');
             }
 
-            const directUrl = response['@microsoft.graph.downloadUrl'];
             const fileName = response.name;
 
-            // Create Cloudflare Worker URL with direct download URL
-            const workerUrl = `https://tgdown.k-drama.workers.dev/${encodeURIComponent(fileName)}?url=${encodeURIComponent(directUrl)}`;
+            // Create short Cloudflare Worker URL with file ID
+            const workerUrl = `https://tgdown.k-drama.workers.dev/download/${encodeURIComponent(fileName)}?ID=${itemId}`;
 
             return workerUrl;
         } catch (error) {

@@ -40,5 +40,8 @@ next-env.d.ts
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local"worker.js" 
-"worker.js" 
+.env.production.local
+
+# Cloudflare Worker
+worker.js
+/worker.js
