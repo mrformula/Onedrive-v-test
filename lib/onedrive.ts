@@ -300,30 +300,40 @@ export class OneDriveService {
                 .select('name,@microsoft.graph.downloadUrl')
                 .get();
 
-            if (!response['@microsoft.graph.downloadUrl']) {
-                throw new Error('Download URL not found');
+            console.log('File details response:', response);
+
+            if (!response || !response['@microsoft.graph.downloadUrl']) {
+                throw new Error('Download URL not found in response');
             }
 
             const directUrl = response['@microsoft.graph.downloadUrl'];
             const fileName = response.name;
 
-            // Encode both filename and URL properly
-            const encodedFileName = encodeURIComponent(fileName);
-            const encodedUrl = encodeURIComponent(directUrl);
+            // Log the values
+            console.log('Direct URL:', directUrl);
+            console.log('File name:', fileName);
 
-            // Create Cloudflare Worker URL with proper encoding
-            const workerUrl = `https://tgdown.k-drama.workers.dev/?url=${encodedUrl}`;
+            // Create Cloudflare Worker URL
+            const workerUrl = `https://tgdown.k-drama.workers.dev/?url=${encodeURIComponent(directUrl)}`;
 
-            console.log('Generated download URL:', {
-                fileName,
-                directUrl,
-                workerUrl
-            });
+            // Log the final URL
+            console.log('Worker URL:', workerUrl);
+
+            // Verify URL is valid
+            try {
+                new URL(workerUrl);
+            } catch (e) {
+                throw new Error('Generated URL is invalid');
+            }
 
             return workerUrl;
         } catch (error) {
-            console.error('Error getting download URL:', error);
-            throw new Error('Failed to get download URL');
+            console.error('Error in getDownloadUrl:', error);
+            if (error instanceof Error) {
+                throw new Error(`Failed to get download URL: ${error.message}`);
+            } else {
+                throw new Error('Failed to get download URL: Unknown error');
+            }
         }
     }
 

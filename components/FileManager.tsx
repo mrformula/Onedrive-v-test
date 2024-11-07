@@ -93,36 +93,41 @@ export default function FileManager() {
 
     const handleCopyLink = async (file: FileItem) => {
         try {
-            const service = await getOneDriveService()
-            const downloadUrl = await service.getDownloadUrl(file.id)
+            console.log('Getting download URL for file:', file);
+            const service = await getOneDriveService();
+            const downloadUrl = await service.getDownloadUrl(file.id);
 
-            console.log('Generated URL:', downloadUrl)
+            console.log('Download URL:', downloadUrl);
 
             // Create temporary textarea element
-            const textarea = document.createElement('textarea')
-            textarea.value = downloadUrl
-            document.body.appendChild(textarea)
+            const textarea = document.createElement('textarea');
+            textarea.value = downloadUrl;
+            document.body.appendChild(textarea);
 
             // Select and copy
-            textarea.select()
-            document.execCommand('copy')
+            textarea.select();
+            const success = document.execCommand('copy');
 
             // Remove temporary element
-            document.body.removeChild(textarea)
+            document.body.removeChild(textarea);
 
-            // Show visual feedback
-            const fileElement = document.getElementById(`file-${file.id}`)
-            if (fileElement) {
-                fileElement.classList.add('border', 'border-green-500')
-                setTimeout(() => {
-                    fileElement.classList.remove('border', 'border-green-500')
-                }, 2000)
+            if (!success) {
+                throw new Error('Copy command failed');
             }
 
-            console.log('URL copied successfully')
+            // Show visual feedback
+            const fileElement = document.getElementById(`file-${file.id}`);
+            if (fileElement) {
+                fileElement.classList.add('border', 'border-green-500');
+                setTimeout(() => {
+                    fileElement.classList.remove('border', 'border-green-500');
+                }, 2000);
+            }
+
+            console.log('URL copied successfully');
         } catch (error) {
-            console.error('Failed to get or copy download link:', error)
-            alert('Failed to copy download link')
+            console.error('Error copying link:', error);
+            alert('Failed to copy download link. Please try again.');
         }
     }
 
