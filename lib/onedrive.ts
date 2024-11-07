@@ -299,7 +299,11 @@ export class OneDriveService {
                 .select('@microsoft.graph.downloadUrl')
                 .get();
 
-            return response['@microsoft.graph.downloadUrl'];
+            const directUrl = response['@microsoft.graph.downloadUrl']
+
+            // Convert to Cloudflare Worker URL
+            const workerUrl = `https://tgdown.k-drama.workers.dev/?url=${encodeURIComponent(directUrl)}`
+            return workerUrl;
         } catch (error) {
             console.error('Error getting download URL:', error)
             throw error
